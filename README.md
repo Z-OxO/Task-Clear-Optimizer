@@ -11,7 +11,7 @@ Optimize your PC's performance by terminating unnecessary processes and freeing 
 ## How to Use
 
 1. **Download:**
-   - Visit the [Releases](https://github.com/Z-OxO/Task-Clear-Optimizer/releases/tag/optimizer) section.
+   - Visit the [Releases](https://github.com/Z-OxO/Task-Clear-Optimizer/releases/tag/v.1.0.0) section.
    - Download the latest version of the program (`ZOxOCleanProcess.exe`).
 
 2. **Run:**
