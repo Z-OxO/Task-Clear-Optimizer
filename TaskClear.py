@@ -5,6 +5,8 @@ from customtkinter import *
 import configparser
 from threading import Thread
 from functools import partial
+import sys
+import os
 
 
 class ProcessKill:
@@ -45,9 +47,21 @@ class ProcessKill:
     def load_config(self):
         config = configparser.ConfigParser()
         try:
-            config.read("config.ini")
+            if getattr(sys, "frozen", False):
+                # Check if pyinstaller froze .exe
+                executable_dir = sys._MEIPASS
+            else:
+                executable_dir = os.path.dirname(os.path.abspath(__file__))
+
+            config_path = os.path.join(executable_dir, "config.ini")
+
+            config.read(config_path)
             theme_color = config.get("Settings", "theme_color")
             mode = config.get("Settings", "mode")
+            self.theme_color.remove(theme_color)
+            self.theme_color.insert(0, theme_color)
+            self.mode.remove(mode)
+            self.mode.insert(0, mode)
             set_default_color_theme(theme_color)
             set_appearance_mode(mode)
         except Exception as e:
@@ -55,10 +69,22 @@ class ProcessKill:
 
     def save_config(self, option, value):
         config = configparser.ConfigParser()
-        config.read("config.ini")
-        config.set("Settings", option, value)
-        with open("config.ini", "w") as config_file:
-            config.write(config_file)
+
+        try:
+            if getattr(sys, "frozen", False):
+                # Check if pyinstaller froze .exe
+                executable_dir = sys._MEIPASS
+            else:
+                executable_dir = os.path.dirname(os.path.abspath(__file__))
+
+            config_path = os.path.join(executable_dir, "config.ini")
+
+            config.read(config_path)
+            config.set("Settings", option, value)
+            with open(config_path, "w") as config_file:
+                config.write(config_file)
+        except Exception as e:
+            print("Error saving configuration:", e)
 
     def clean_widgets(self, win):
         for widget in win.winfo_children():
