@@ -11,17 +11,19 @@ Optimize your PC's performance by terminating unnecessary processes and freeing 
 ## How to Use
 
 1. **Download:**
-   - Visit the [Releases](https://github.com/Z-OxO/Task-Clear-Optimizer/releases/tag/v.1.0.0) section.
+   - Visit the [Releases](https://github.com/Z-OxO/Task-Clear-Optimizer/releases/tag/v.2.1.0) section.
    - Download the latest version of the program (`ZOxOCleanProcess.exe`).
+   - ⚠️ **BITDENFENDER MIGHT FLAG THE .exe OR THE .zip file**
 
 2. **Run:**
-   - Double-click the downloaded `ZOxOCleanProcess.exe` file.
+    - Extract the .zip
+    - Double-click `ZOxOCleanProcess.exe` file.
 
-3. **Optimize:**
-   - Click the "Optimize Process" button.
-
-4. **View Console:**
-   - Monitor the console for process termination status.
+4. **Features:**
+   - "Optimize Process" button to cleab not necessary process.
+   - "Setting" button to customize the theme color and background color
+   - "Manually stop process" to manually kill the process 
+   
 
 Feel free to contribute or report issues. Happy optimizing! 😊
 
