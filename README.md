@@ -13,7 +13,7 @@ Optimize your PC's performance by terminating unnecessary processes and freeing 
 1. **Download:**
    - Visit the [Releases](https://github.com/Z-OxO/Task-Clear-Optimizer/releases/tag/v.2.1.0) section.
    - Download the latest version of the program (`ZOxOCleanProcess.exe`).
-   - ⚠️ **BITDENFENDER MIGHT FLAG THE .exe OR THE .zip file**
+   - ⚠️ **BITDENFENDER AND McAfee MIGHT FLAG THE .exe OR THE .zip file**
 
 2. **Run:**
     - Extract the .zip
