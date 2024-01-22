@@ -13,11 +13,11 @@ class ProcessKill:
     def __init__(self):
         # CONSTANT
         self.PROCESS_LIST_KILL = [
+            "opera.exe",
             "OneDrive.exe",
             "Skype.exe",
             "Spotify.exe",
             "Discord.exe",
-            "spoolsv.exe",
             "wuauclt.exe",
             "CCXProcess.exe",
             "steam.exe",
@@ -40,12 +40,12 @@ class ProcessKill:
 
         # Main window
         self.window = CTk()
-        self.window.geometry("650x600")
+        self.window.geometry("650x650")
         self.window.resizable(False, False)
         self.window.title("Z_OxO Optimizer Process Program")
 
     def load_config(self):
-        config = configparser.ConfigParser()
+        self.config = configparser.ConfigParser()
         try:
             if getattr(sys, "frozen", False):
                 # Check if pyinstaller froze .exe
@@ -53,11 +53,13 @@ class ProcessKill:
             else:
                 executable_dir = os.path.dirname(os.path.abspath(__file__))
 
-            config_path = os.path.join(executable_dir, "config.ini")
+            self.config_path = os.path.join(executable_dir, "config.ini")
 
-            config.read(config_path)
-            theme_color = config.get("Settings", "theme_color")
-            mode = config.get("Settings", "mode")
+            self.config.read(self.config_path)
+            theme_color = self.config.get("Settings", "theme_color")
+            mode = self.config.get("Settings", "mode")
+            self.fortnite_path = self.config.get("paths", "fortnite")
+            # Make theme and mode the first element in OptionButton in Settings
             self.theme_color.remove(theme_color)
             self.theme_color.insert(0, theme_color)
             self.mode.remove(mode)
@@ -68,7 +70,7 @@ class ProcessKill:
             print("Error loading configuration:", e)
 
     def save_config(self, option, value):
-        config = configparser.ConfigParser()
+        self.config = configparser.ConfigParser()
 
         try:
             if getattr(sys, "frozen", False):
@@ -77,12 +79,12 @@ class ProcessKill:
             else:
                 executable_dir = os.path.dirname(os.path.abspath(__file__))
 
-            config_path = os.path.join(executable_dir, "config.ini")
+            self.config_path = os.path.join(executable_dir, "config.ini")
 
-            config.read(config_path)
-            config.set("Settings", option, value)
-            with open(config_path, "w") as config_file:
-                config.write(config_file)
+            self.config.read(self.config_path)
+            self.config.set("Settings", option, value)
+            with open(self.config_path, "w") as config_file:
+                self.config.write(config_file)
         except Exception as e:
             print("Error saving configuration:", e)
 
@@ -91,6 +93,34 @@ class ProcessKill:
             widget.destroy()
         win.update()
 
+    def game_menu(self):
+        self.clean_widgets(self.window)
+
+        def get_games_path():
+            if chk_ftn == True:
+                self.config.read(self.config_path)
+                fortnite_path = self.config.get("paths", "fortnite")
+                if fortnite_path == "None":
+                    if not os.path.exists("C:\Program Files\Epic Games\Fortnite"):
+                        fortnite_path = filedialog.askdirectory("C:\\")
+                        self.config.set("paths", "fortnite", fortnite_path)
+                        with open(self.config_path, "w") as config_file:
+                            self.config.write(config_file)
+
+        game_menu_frame = CTkFrame(self.window, height=650, width=650)
+
+        game_menu_frame.pack()
+        chk_ftn = BooleanVar(value=False)
+        CTkCheckBox(
+            game_menu_frame,
+            text="Fortnite",
+            variable=chk_ftn,
+            onvalue=True,
+            offvalue=False,
+            command=get_games_path,
+        ).grid(column=0, row=0)
+
+    # Build the Setting Menu
     def setting_menu(self):
         def update_mode(mode):
             set_appearance_mode(mode)
@@ -129,34 +159,46 @@ class ProcessKill:
             command=self.widgets_build_main,
         ).pack(side="bottom", anchor="sw", padx=20, pady=20)
 
+    # Build the Main Menu widgets
     def widgets_build_main(self):
         self.clean_widgets(self.window)
+        main_frame = CTkFrame(self.window, height=650, width=650)
+        main_frame.pack()
         CTkLabel(
-            self.window,
+            main_frame,
             text="Kill task and free memory and CPU usage for your pc",
             font=("", 25),
         ).grid(row=0, column=0, padx=20, pady=20, columnspan=2)
 
         CTkButton(
-            self.window,
+            main_frame,
             height=40,
             width=100,
             text="Settings",
             font=("", 15),
             command=lambda: self.setting_menu(),
-        ).grid(row=1, column=0, sticky="sw", padx=20, pady=20)
+        ).grid(row=1, column=0, sticky="nw", padx=20, pady=20)
 
         CTkButton(
-            self.window,
+            main_frame,
             height=40,
             width=100,
             text="Manually stop process",
             font=("", 15),
             command=self.manually_process,
-        ).grid(row=1, column=1, sticky="se", padx=20, pady=20)
+        ).grid(row=1, column=1, sticky="n", padx=20, pady=20)
+
+        CTkButton(
+            main_frame,
+            height=40,
+            width=100,
+            text="Game Menu",
+            font=("", 15),
+            command=lambda: self.game_menu(),
+        ).grid(row=1, column=1, sticky="ne", padx=20, pady=20)
 
         self.scrollableBar = CTkScrollableFrame(
-            self.window,
+            main_frame,
             width=450,
             label_text="Process console : ",
             label_font=("", 15, "bold", "underline"),
@@ -164,7 +206,7 @@ class ProcessKill:
         self.scrollableBar.grid(row=2, column=0, columnspan=2, padx=20, pady=50)
 
         CTkButton(
-            self.window,
+            main_frame,
             height=50,
             width=500,
             text="Click to optimize process",
@@ -176,14 +218,19 @@ class ProcessKill:
 
     def process_kill(self):
         self.clean_widgets(self.scrollableBar)
+        cpt_process = 0
+        # Iter in the process list
         for proc in psutil.process_iter():
+            # Check if the process name is in the Process list
             if proc.name() in self.PROCESS_LIST_KILL:
                 try:
                     proc.terminate()
+                    cpt_process += 1
                     CTkLabel(
                         master=self.scrollableBar,
                         text=f"Process {proc.name()} successively kill.",
                         fg_color="green",
+                        bg_color="green",
                     ).pack(anchor="w")
                     sleep(0.2)
                     self.window.update()
@@ -196,13 +243,23 @@ class ProcessKill:
                         master=self.scrollableBar,
                         text=f"Unable to complete process {proc.name()}.",
                         fg_color="red",
+                        bg_color="red",
                     ).pack(anchor="w")
                     self.window.update()
                     sleep(0.2)
+        CTkLabel(
+            master=self.scrollableBar,
+            text=f"FINISH WITH : {cpt_process} PROCESS TERMINATE.",
+            fg_color="green",
+            bg_color="green",
+        ).pack(anchor="w")
+        self.window.update()
+        sleep(0.2)
 
+    # Build the "Manually kill process" Menu
     def manually_process(self):
+        # Scrollbar Button pressed function
         def kill_process(process, process_button):
-            print("called")
             try:
                 process.terminate()
                 Success_label = CTkLabel(
@@ -237,17 +294,25 @@ class ProcessKill:
                 failed_label.destroy()
 
         self.clean_widgets(self.window)
+
+        # Main frame of manually kill menu
+        frame = CTkFrame(self.window, height=650, width=650)
+        frame.columnconfigure(2)
+        frame.rowconfigure(2)
+        frame.pack()
+
         self.scrollableBar = CTkScrollableFrame(
-            self.window,
+            frame,
             width=600,
             height=400,
             label_text="Process list",
             label_font=("", 20, "bold", "underline"),
         )
-        self.scrollableBar.grid(column=1, row=0, pady=20, padx=20)
+        self.scrollableBar.grid(column=1, row=1, pady=20, padx=20)
 
         processes_info = []
 
+        # Collect and filter process
         for proc in psutil.process_iter(["pid", "name", "memory_info"]):
             if proc.info["name"] == "svchost.exe":
                 pass
@@ -275,6 +340,7 @@ class ProcessKill:
             reverse=True,
         )
 
+        # Add process buttons in the scrollbar
         for process_info in sorted_processes:
             text = process_info["text"]
             process = process_info["process"]
@@ -285,6 +351,7 @@ class ProcessKill:
                 width=500,
                 height=10,
             )
+            # Pass the kill process function to all the buttons
             process_button.configure(
                 command=lambda process=process, process_button=process_button: kill_process(
                     process, process_button
@@ -293,13 +360,22 @@ class ProcessKill:
             process_button.pack(pady=3)
 
         CTkButton(
-            self.window,
+            frame,
+            height=40,
+            width=10,
+            text="RESET LIST",
+            font=("", 15),
+            command=self.manually_process,
+        ).grid(row=0, column=1, sticky="n", padx=10, pady=10)
+
+        CTkButton(
+            frame,
             height=40,
             width=10,
             text="Main Menu",
             font=("", 15),
             command=self.widgets_build_main,
-        ).grid(row=1, column=1, sticky="sw", padx=10, pady=10)
+        ).grid(row=2, column=1, sticky="sw", padx=10, pady=10)
 
 
 if __name__ == "__main__":
