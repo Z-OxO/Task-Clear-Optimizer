@@ -108,8 +108,17 @@ class ProcessKill:
                             self.config.write(config_file)
 
         game_menu_frame = CTkFrame(self.window, height=650, width=650)
-
         game_menu_frame.pack()
+
+        CTkButton(
+            game_menu_frame,
+            height=40,
+            width=100,
+            text="Main Menu",
+            font=("", 15),
+            command=self.widgets_build_main,
+        ).grid(sticky="sw", pady=10, padx=10, column=0, row=3)
+
         chk_ftn = BooleanVar(value=False)
         CTkCheckBox(
             game_menu_frame,
@@ -164,11 +173,12 @@ class ProcessKill:
         self.clean_widgets(self.window)
         main_frame = CTkFrame(self.window, height=650, width=650)
         main_frame.pack()
+
         CTkLabel(
             main_frame,
             text="Kill task and free memory and CPU usage for your pc",
             font=("", 25),
-        ).grid(row=0, column=0, padx=20, pady=20, columnspan=2)
+        ).grid(row=0, column=0, padx=20, pady=20, columnspan=3)
 
         CTkButton(
             main_frame,
@@ -186,7 +196,7 @@ class ProcessKill:
             text="Manually stop process",
             font=("", 15),
             command=self.manually_process,
-        ).grid(row=1, column=1, sticky="n", padx=20, pady=20)
+        ).grid(row=1, column=1, padx=20, pady=20)
 
         CTkButton(
             main_frame,
@@ -195,7 +205,7 @@ class ProcessKill:
             text="Game Menu",
             font=("", 15),
             command=lambda: self.game_menu(),
-        ).grid(row=1, column=1, sticky="ne", padx=20, pady=20)
+        ).grid(row=1, column=2, sticky="ne", padx=20, pady=20)
 
         self.scrollableBar = CTkScrollableFrame(
             main_frame,
@@ -203,7 +213,7 @@ class ProcessKill:
             label_text="Process console : ",
             label_font=("", 15, "bold", "underline"),
         )
-        self.scrollableBar.grid(row=2, column=0, columnspan=2, padx=20, pady=50)
+        self.scrollableBar.grid(row=2, column=0, columnspan=3, padx=20, pady=50)
 
         CTkButton(
             main_frame,
@@ -212,7 +222,7 @@ class ProcessKill:
             text="Click to optimize process",
             font=("", 20),
             command=lambda: self.process_kill(),
-        ).grid(row=3, column=0, columnspan=2, padx=0, pady=20)
+        ).grid(row=3, column=0, columnspan=3, padx=0, pady=20)
 
         self.window.mainloop()
 
