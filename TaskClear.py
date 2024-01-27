@@ -3,10 +3,10 @@ from time import sleep
 from tkinter import *
 from customtkinter import *
 import configparser
-from threading import Thread
-from functools import partial
+from stat import S_IREAD, S_IRGRP, S_IROTH, S_IWUSR
 import sys
 import os
+import ctypes
 
 
 class ProcessKill:
@@ -35,7 +35,7 @@ class ProcessKill:
 
         # Variables
 
-        self.theme_color = ["dark-blue", "green", "blue"]
+        self.themes_colors = ["dark-blue", "green", "blue"]
         self.mode = ["dark", "light"]
 
         # Main window
@@ -43,6 +43,20 @@ class ProcessKill:
         self.window.geometry("650x650")
         self.window.resizable(False, False)
         self.window.title("Z_OxO Optimizer Process Program")
+
+    def is_admin(self):
+        try:
+            return ctypes.windll.shell32.IsUserAnAdmin()
+        except:
+            return False
+
+    def run_as_admin(self):
+        if self.is_admin():
+            return
+        else:
+            ctypes.windll.shell32.ShellExecuteW(
+                None, "runas", sys.executable, __file__, None, 1
+            )
 
     def load_config(self):
         self.config = configparser.ConfigParser()
@@ -54,14 +68,14 @@ class ProcessKill:
                 executable_dir = os.path.dirname(os.path.abspath(__file__))
 
             self.config_path = os.path.join(executable_dir, "config.ini")
-
+            self.user = os.getlogin()
             self.config.read(self.config_path)
             theme_color = self.config.get("Settings", "theme_color")
             mode = self.config.get("Settings", "mode")
             self.fortnite_path = self.config.get("paths", "fortnite")
             # Make theme and mode the first element in OptionButton in Settings
-            self.theme_color.remove(theme_color)
-            self.theme_color.insert(0, theme_color)
+            self.themes_colors.remove(theme_color)
+            self.themes_colors.insert(0, theme_color)
             self.mode.remove(mode)
             self.mode.insert(0, mode)
             set_default_color_theme(theme_color)
@@ -69,7 +83,7 @@ class ProcessKill:
         except Exception as e:
             print("Error loading configuration:", e)
 
-    def save_config(self, option, value):
+    def save_config(self, option=None, value=None, game=None, path=None):
         self.config = configparser.ConfigParser()
 
         try:
@@ -82,11 +96,15 @@ class ProcessKill:
             self.config_path = os.path.join(executable_dir, "config.ini")
 
             self.config.read(self.config_path)
-            self.config.set("Settings", option, value)
+            if option != None or value != None:
+                self.config.set("Settings", option, value)
+            if path != None:
+                self.config.set("paths", game, path)
             with open(self.config_path, "w") as config_file:
                 self.config.write(config_file)
         except Exception as e:
             print("Error saving configuration:", e)
+        self.window.update()
 
     def clean_widgets(self, win):
         for widget in win.winfo_children():
@@ -95,52 +113,206 @@ class ProcessKill:
 
     def game_menu(self):
         self.clean_widgets(self.window)
+        self.load_config()
 
-        def get_games_path():
-            if chk_ftn == True:
-                self.config.read(self.config_path)
-                fortnite_path = self.config.get("paths", "fortnite")
-                if fortnite_path == "None":
-                    if not os.path.exists("C:\Program Files\Epic Games\Fortnite"):
-                        fortnite_path = filedialog.askdirectory("C:\\")
-                        self.config.set("paths", "fortnite", fortnite_path)
-                        with open(self.config_path, "w") as config_file:
+        def submit_ftn_res():
+            try:
+                config_path_ftn = rf"{self.fortnite_path}\Saved\Config\WindowsClient\GameUserSettings.ini"
+                os.chmod(config_path_ftn, S_IWUSR | S_IREAD)
+                configftn = configparser.ConfigParser()
+                configftn.read(config_path_ftn)
+                print(configftn.sections())
+                if configftn.has_option(
+                    "/Script/FortniteGame.FortGameUserSettings", "lastcpubenchmarksteps"
+                ):
+                    configftn.remove_option(
+                        "/Script/FortniteGame.FortGameUserSettings",
+                        "lastcpubenchmarksteps",
+                    )
+                configftn.set(
+                    "/Script/FortniteGame.FortGameUserSettings",
+                    "ResolutionSizeX",
+                    res_x_entry.get(),
+                )
+                configftn.set(
+                    "/Script/FortniteGame.FortGameUserSettings",
+                    "ResolutionSizeY",
+                    res_y_entry.get(),
+                )
+                configftn.set(
+                    "/Script/FortniteGame.FortGameUserSettings",
+                    "LastUserConfirmedResolutionSizeX",
+                    res_x_entry.get(),
+                )
+                configftn.set(
+                    "/Script/FortniteGame.FortGameUserSettings",
+                    "LastUserConfirmedResolutionSizeY",
+                    res_y_entry.get(),
+                )
+                configftn.set(
+                    "/Script/FortniteGame.FortGameUserSettings",
+                    "DesiredScreenWidth",
+                    res_x_entry.get(),
+                )
+                configftn.set(
+                    "/Script/FortniteGame.FortGameUserSettings",
+                    "DesiredScreenHeight",
+                    res_y_entry.get(),
+                )
+                configftn.set(
+                    "/Script/FortniteGame.FortGameUserSettings",
+                    "LastUserConfirmedDesiredScreenWidth",
+                    res_x_entry.get(),
+                )
+                configftn.set(
+                    "/Script/FortniteGame.FortGameUserSettings",
+                    "LastUserConfirmedDesiredScreenHeight",
+                    res_y_entry.get(),
+                )
+
+                with open(config_path_ftn, "w") as configfile:
+                    configftn.write(configfile)
+                os.chmod(config_path_ftn, S_IREAD | S_IRGRP | S_IROTH)
+                succes_label = CTkLabel(
+                    ftn_frame,
+                    height=20,
+                    text=f"Config save !",
+                    fg_color="green",
+                )
+                succes_label.grid(column=0, row=2)
+                ftn_frame.update()
+                sleep(2)
+                succes_label.destroy()
+            except Exception as e:
+                failed_label = CTkLabel(
+                    ftn_frame,
+                    height=20,
+                    text=f"Config save failed ! : {e}",
+                    fg_color="red",
+                )
+                failed_label.grid(column=0, row=2)
+                ftn_frame.update()
+                sleep(2)
+                failed_label.destroy()
+
+        def get_games_path(game, basic_path):
+            self.config.read(self.config_path)
+            path = self.config.get("paths", game)
+            if path == "None":
+                if not os.path.exists(basic_path):
+                    path = filedialog.askdirectory(
+                        initialdir=rf"C:\Users\{self.user}\AppData\Local",
+                        mustexist=True,
+                        title=f"Select {game} AppData path",
+                    )
+                    if path == "":
+                        pass
+                    else:
+                        self.config.set("paths", game, path)
+                        with open(self.config_path, "wb+") as config_file:
                             self.config.write(config_file)
+                        succes_label = CTkLabel(
+                            paths_frame,
+                            text=f"{game} path succesfully saved",
+                            font=("", 25, "bold"),
+                            bg_color="green",
+                        )
+                    succes_label.grid(column=0, row=2)
+                    paths_frame.update()
+                    sleep(2)
+                    succes_label.destroy()
+                    self.game_menu()
+                else:
+                    path = basic_path
+                    self.save_config(option=None, value=None, game=game, path=path)
+                    succes_label = CTkLabel(
+                        paths_frame,
+                        text=f"{game} path succesfully saved",
+                        font=("", 25, "bold"),
+                        bg_color="green",
+                    )
+                    succes_label.grid(column=0, row=2)
+                    paths_frame.update()
+                    sleep(2)
+                    succes_label.destroy()
+                    self.game_menu()
 
-        game_menu_frame = CTkFrame(self.window, height=650, width=650)
-        game_menu_frame.pack()
+        self.window.rowconfigure((0, 1, 2), weight=0)
+        self.window.rowconfigure(4, weight=3)
+        self.window.columnconfigure(0, weight=3)
 
-        CTkButton(
-            game_menu_frame,
+        CTkLabel(self.window, text="Path :", font=("", 30, "bold")).grid(
+            column=0, row=0, sticky="nw", pady=10, padx=10
+        )
+        paths_frame = CTkFrame(self.window, height=70, width=250)
+        paths_frame.grid(sticky="snew", column=0, row=1, pady=10, padx=25)
+
+        if self.fortnite_path != "None":
+            CTkLabel(
+                self.window, text="Fortnite Options :", font=("", 30, "bold")
+            ).grid(column=0, row=2, sticky="nw", pady=10, padx=10)
+            ftn_frame = CTkFrame(self.window, height=100, width=250)
+            ftn_frame.grid(sticky="snew", column=0, row=3, pady=10, padx=25)
+            res_x_entry = CTkEntry(
+                ftn_frame, width=100, height=25, placeholder_text="X resolution"
+            )
+            res_y_entry = CTkEntry(
+                ftn_frame, width=100, height=25, placeholder_text="Y resolution"
+            )
+            res_x_entry.grid(padx=5, pady=5, column=0, row=0)
+            CTkLabel(ftn_frame, text="X", font=("", 20)).grid(
+                padx=5, pady=5, column=1, row=0
+            )
+            CTkButton(
+                ftn_frame, width=200, height=25, text="Save", command=submit_ftn_res
+            ).grid(column=3, row=0)
+            res_y_entry.grid(padx=5, pady=5, column=2, row=0)
+        btn_main_menu = CTkButton(
+            self.window,
             height=40,
             width=100,
             text="Main Menu",
             font=("", 15),
             command=self.widgets_build_main,
-        ).grid(sticky="sw", pady=10, padx=10, column=0, row=3)
+        )
+        btn_main_menu.grid(sticky="sw", pady=10, padx=10, column=0, row=4)
 
-        chk_ftn = BooleanVar(value=False)
-        CTkCheckBox(
-            game_menu_frame,
-            text="Fortnite",
-            variable=chk_ftn,
-            onvalue=True,
-            offvalue=False,
-            command=get_games_path,
-        ).grid(column=0, row=0)
+        CTkButton(
+            paths_frame,
+            text=f"Fortnite ✅" if self.fortnite_path != "None" else "Fortnite",
+            font=("", 20),
+            height=25,
+            width=25,
+            command=lambda: get_games_path(
+                "fortnite", rf"C:\Users\{self.user}\AppData\Local\FortniteGame"
+            ),
+        ).grid(sticky="sw", column=0, row=0, pady=10, padx=10)
+        CTkButton(
+            paths_frame,
+            text="Apex (COMING SOON)",
+            font=("", 20),
+            height=25,
+            width=25,
+            # command=lambda: get_games_path("apex", "C:\Program File\Origin Games\Apex"),
+        ).grid(sticky="sw", column=0, row=1, pady=10, padx=10)
 
     # Build the Setting Menu
     def setting_menu(self):
         def update_mode(mode):
+            self.mode.remove(mode)
+            self.mode.insert(0, mode)
             set_appearance_mode(mode)
             self.window.update()
-            self.save_config("mode", mode)
+            self.save_config(option="mode", value=mode)
 
         def update_theme(theme_color):
+            self.themes_colors.remove(theme_color)
+            self.themes_colors.insert(0, theme_color)
             set_default_color_theme(theme_color)
+            self.window.update()
+            self.save_config(option="theme_color", value=theme_color)
             self.clean_widgets(self.window)
             self.setting_menu()
-            self.save_config("theme_color", theme_color)
 
         self.clean_widgets(self.window)
         CTkOptionMenu(
@@ -155,7 +327,7 @@ class ProcessKill:
             self.window,
             width=500,
             height=100,
-            values=self.theme_color,
+            values=self.themes_colors,
             command=update_theme,
             font=("", 50),
         ).pack(anchor="center", side="top", padx=20, pady=20)
@@ -183,7 +355,7 @@ class ProcessKill:
         CTkButton(
             main_frame,
             height=40,
-            width=100,
+            width=120,
             text="Settings",
             font=("", 15),
             command=lambda: self.setting_menu(),
@@ -192,7 +364,7 @@ class ProcessKill:
         CTkButton(
             main_frame,
             height=40,
-            width=100,
+            width=120,
             text="Manually stop process",
             font=("", 15),
             command=self.manually_process,
@@ -201,7 +373,7 @@ class ProcessKill:
         CTkButton(
             main_frame,
             height=40,
-            width=100,
+            width=120,
             text="Game Menu",
             font=("", 15),
             command=lambda: self.game_menu(),
@@ -273,7 +445,7 @@ class ProcessKill:
             try:
                 process.terminate()
                 Success_label = CTkLabel(
-                    self.window,
+                    frame,
                     text=f"Succesfully terminated",
                     text_color="green",
                     font=("", 25),
@@ -283,7 +455,6 @@ class ProcessKill:
                     process_button.destroy()
                 except Exception as e:
                     print(e)
-                print("destroy")
                 self.scrollableBar.update()
                 sleep(0.5)
                 Success_label.destroy()
@@ -293,7 +464,7 @@ class ProcessKill:
                 psutil.ZombieProcess,
             ) as e:
                 failed_label = CTkLabel(
-                    self.window,
+                    frame,
                     text=f"Failed to terminate: {e}",
                     text_color="red",
                     font=("", 10),
@@ -390,5 +561,6 @@ class ProcessKill:
 
 if __name__ == "__main__":
     App = ProcessKill()
+    # App.run_as_admin()
     App.load_config()
     App.widgets_build_main()
