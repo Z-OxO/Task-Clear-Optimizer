@@ -121,7 +121,21 @@ class ProcessKill:
                 os.chmod(config_path_ftn, S_IWUSR | S_IREAD)
                 configftn = configparser.ConfigParser()
                 configftn.read(config_path_ftn)
-                print(configftn.sections())
+                if (
+                    res_x_entry.get().isdigit() == False
+                    or res_y_entry.get().isdigit() == False
+                ):
+                    failed_label = CTkLabel(
+                        ftn_frame,
+                        height=20,
+                        text=f"Enter number !",
+                        fg_color="red",
+                    )
+                    failed_label.grid(column=0, row=2)
+                    ftn_frame.update()
+                    sleep(2)
+                    failed_label.destroy()
+                    return
                 if configftn.has_option(
                     "/Script/FortniteGame.FortGameUserSettings", "lastcpubenchmarksteps"
                 ):
@@ -168,6 +182,16 @@ class ProcessKill:
                     "/Script/FortniteGame.FortGameUserSettings",
                     "LastUserConfirmedDesiredScreenHeight",
                     res_y_entry.get(),
+                )
+                configftn.set(
+                    "/Script/FortniteGame.FortGameUserSettings",
+                    "lastconfirmedfullscreenmode",
+                    "0",
+                )
+                configftn.set(
+                    "/Script/FortniteGame.FortGameUserSettings",
+                    "preferredfullscreenmode",
+                    "0",
                 )
 
                 with open(config_path_ftn, "w") as configfile:
